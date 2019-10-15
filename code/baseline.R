@@ -17,7 +17,7 @@ baselineBootstrap <- function(inputData, num_var,formula, nBoots){
 
 
 #import fitness data 
-coefficients <- baselineBootstrap(fitness,3,Age~Weight+Oxygen,100)
+coefficients2 <- baselineBootstrap(fitness,3,Age~Weight+Oxygen,7)
 
 #plot histogram of the second coefficient
 hist(coefficients[,2])
