@@ -1,3 +1,8 @@
+number_of_variables <- 3
+form <- Age~Weight+Oxygen
+n = 7
+
+
 speededBootstrap <- function(inputData, num_var,formula, nBoots){
   mat <- matrix(0L , nrow = nBoots, ncol = num_var)
   for(i in 1:nBoots){
@@ -10,17 +15,20 @@ speededBootstrap <- function(inputData, num_var,formula, nBoots){
   return(mat)
 }
 
-
 #import fitness data 
-coefficients <- speededBootstrap(fitness,3,Age~Weight+Oxygen,7)
+coefficients <- speededBootstrap(fitness
+                                 ,number_of_variables
+                                 ,form
+                                 ,n)
 
-for(i in 1:3){
-  #plot histogram of the second coefficient
-  hist(coefficients[,i])
-  #get quantiles
-  print(quantile(coefficients[,i], probs = c(0.025,0.975)))
+get_quantiles <- function(coeff, num_var){
+  for(i in 1:num_var){
+    #get quantiles
+    #how does one accesss the index of a quantile
+    print(quantile(coeff[,i], probs = c(0.025,0.975)))
+  }
 }
 
-#get microbenchmark
-library(microbenchmark)
-microbenchmark(baselineBootstrap(fitness,3,Age~Weight+Oxygen,100))
+# get quantiles
+get_quantiles(coefficients, number_of_variables)
+
