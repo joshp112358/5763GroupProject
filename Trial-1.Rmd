@@ -1,5 +1,5 @@
 ---
-title: "Trial 1"
+title: "Experimentation Log"
 output: html_document
 ---
 
@@ -11,7 +11,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 It will be useful to store variable like this, so when we try to generalize it into an app, it is more straightforward.
 ```{r}
-set.seed(0)
 number_of_variables <- 3
 form <- Age~Weight+Oxygen
 n <- 100
@@ -60,6 +59,7 @@ baselineBootstrap <- function(inputData, num_var,formula, nBoots){
 Get the coefficients for a linear model trained on the declared variables above and print quantiles
 
 ```{r}
+set.seed(9)
 coefficients1 <- baselineBootstrap(inputData = data,
                                    num_var = number_of_variables,
                                    formula = form,
@@ -77,8 +77,7 @@ Instantiate matrix with all zeros instead of rbind hell.
 An experiment will need to occur with instantiating a nan matrix
 - (10/15) Result is failure. Instantiating with NaNs slows performance on all metrics but Median
 ```{r}
-
-speededBootstrap <- function(inputData, num_var,formula, nBoots){
+speedyBoot <- function(inputData, num_var,formula, nBoots){
   mat <- matrix(0L, nrow = nBoots, ncol = num_var)
   for(i in 1:nBoots){
     bootData <- inputData[sample(1:nrow(inputData), nrow(inputData), replace = T),]
@@ -94,8 +93,9 @@ speededBootstrap <- function(inputData, num_var,formula, nBoots){
 Get coefficients and assess quantiles
 
 ```{r}
+set.seed(9)
 
-coefficients2 <- speededBootstrap(inputData = data,
+coefficients2 <- speedyBoot(inputData = data,
                                    num_var = number_of_variables,
                                    formula = form,
                                    nBoots = n)
@@ -110,16 +110,94 @@ One wants n large so that the gap in performance is larger and more evident. If 
 
 ```{r}
 
+set.seed(9)
 n <- 200
 
 library(microbenchmark)
-
 microbenchmark(
   coefficients1 <- baselineBootstrap(inputData = data,
                                    num_var = number_of_variables,
                                    formula = form,
                                    nBoots = n),
-  coefficients2 <- speededBootstrap(inputData = data,
+  coefficients2 <- speedyBoot(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+  
+  )  
+```
+There is improvement. However the difference is so nominal that it could be completely stochastic. Let's test!
+
+```{r}
+
+set.seed(498)
+n <- 200
+
+library(microbenchmark)
+microbenchmark(
+  coefficients1 <- baselineBootstrap(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n),
+  coefficients2 <- speedyBoot(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+  
+  )  
+```
+It is stochastic! 
+
+## Speedy 2
+
+Try to improve random sampling bottleneck by removing list enumeration in sample
+```{r}
+n <-100
+speedyBoot2 <- function(inputData, num_var,formula, nBoots){
+  mat <- matrix(0L, nrow = nBoots, ncol = num_var)
+  for(i in 1:nBoots){
+    bootData <- inputData[sample(nrow(inputData), nrow(inputData), replace = T),]
+    bootLM <- lm(formula, data = bootData)
+    # store the coefs
+    mat[i,] <- coef(bootLM)
+  } # end of i loop
+  return(mat)
+}
+
+set.seed(9)
+
+coefficients3 <- speedyBoot2(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+get_quantiles(coefficients3, number_of_variables)
+```
+
+```{r}
+n <- 200
+set.seed(8)
+microbenchmark(
+  coefficients1 <- baselineBootstrap(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n),
+  coefficients3 <- speedyBoot2(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+  
+  )  
+```
+Check for Stochasticity
+
+```{r}
+set.seed(23892)
+microbenchmark(
+  coefficients1 <- baselineBootstrap(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n),
+  coefficients3 <- speedyBoot2(inputData = data,
                                    num_var = number_of_variables,
                                    formula = form,
                                    nBoots = n)
@@ -127,3 +205,4 @@ microbenchmark(
   )  
 ```
 
+Fantastic!!!!!!!!!!!
