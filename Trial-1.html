@@ -472,8 +472,8 @@ microbenchmark(
 ##  coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##         coefficients2 &lt;- speedyBoot(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##       min       lq     mean   median       uq      max neval
-##  135.5093 140.1653 147.1476 142.8741 145.8062 218.9340   100
-##  130.3019 139.5169 149.5572 141.9474 152.4159 201.8408   100</code></pre>
+##  131.7455 140.8679 150.2818 143.4879 153.0871 200.5745   100
+##  130.6109 140.1761 149.0043 142.3073 151.0038 210.7872   100</code></pre>
 <p>There is improvement. However the difference is so nominal that it could be completely stochastic. Let’s test!</p>
 <pre class="r"><code>set.seed(498)
 n &lt;- 200
@@ -495,8 +495,8 @@ microbenchmark(
 ##  coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##         coefficients2 &lt;- speedyBoot(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##       min       lq    mean   median       uq      max neval
-##  132.1239 141.4837 150.160 143.5999 148.7678 235.3803   100
-##  134.2951 140.1858 147.871 142.0245 147.7797 199.3258   100</code></pre>
+##  134.0121 140.1206 151.067 143.7198 151.6763 214.7395   100
+##  127.8674 138.0037 150.639 141.7597 156.7855 222.8130   100</code></pre>
 <p>It is stochastic!</p>
 </div>
 <div id="speedy-2" class="section level2">
@@ -545,8 +545,8 @@ microbenchmark(
 ##  coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##        coefficients3 &lt;- speedyBoot2(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##       min       lq     mean   median       uq      max neval
-##  133.7648 143.6359 166.2280 150.6732 185.8010 403.3605   100
-##  130.1755 141.2676 162.0475 150.3664 179.4966 273.0590   100</code></pre>
+##  130.7757 139.8096 144.0957 141.4506 145.9311 200.0257   100
+##  131.1459 137.5580 143.4047 140.5027 144.7986 215.4021   100</code></pre>
 <p>Check for Stochasticity</p>
 <pre class="r"><code>set.seed(23892)
 microbenchmark(
@@ -565,9 +565,8 @@ microbenchmark(
 ##  coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##        coefficients3 &lt;- speedyBoot2(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##       min       lq     mean   median       uq      max neval
-##  136.5835 142.9322 163.8978 149.4921 185.3973 220.7102   100
-##  133.3302 140.0959 158.6436 143.9409 185.2875 217.6291   100</code></pre>
-<p>Fantastic!!!!!!!!!!!</p>
+##  131.5196 137.2431 153.8313 142.8961 153.8398 241.5785   100
+##  127.6762 136.4742 147.2081 140.5472 146.2022 248.1855   100</code></pre>
 </div>
 
 
