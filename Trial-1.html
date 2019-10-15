@@ -369,9 +369,10 @@ summary {
 <div id="declare-variables-and-import-data" class="section level2">
 <h2>Declare Variables and Import Data</h2>
 <p>It will be useful to store variable like this, so when we try to generalize it into an app, it is more straightforward.</p>
-<pre class="r"><code>number_of_variables &lt;- 3
+<pre class="r"><code>set.seed(0)
+number_of_variables &lt;- 3
 form &lt;- Age~Weight+Oxygen
-n &lt;- 50
+n &lt;- 100
 
 data &lt;- read.csv(file=&quot;~/Desktop/5763GroupProject/data/fitness.csv&quot;, header=TRUE, sep=&quot;,&quot;)</code></pre>
 </div>
@@ -411,12 +412,12 @@ data &lt;- read.csv(file=&quot;~/Desktop/5763GroupProject/data/fitness.csv&quot;
                                    nBoots = n)
 
 get_quantiles(coefficients1,number_of_variables)</code></pre>
-<pre><code>##      2.5%     97.5% 
-##  45.00762 100.83470 
-##          2.5%         97.5% 
-## -0.3635292002  0.0008430977 
+<pre><code>##     2.5%    97.5% 
+## 51.21455 98.10105 
 ##        2.5%       97.5% 
-## -0.58369080  0.09694559</code></pre>
+## -0.37743366  0.03500623 
+##        2.5%       97.5% 
+## -0.63043119 -0.03553489</code></pre>
 </div>
 <div id="speededup-1" class="section level2">
 <h2>SpeededUp 1</h2>
@@ -440,11 +441,11 @@ get_quantiles(coefficients1,number_of_variables)</code></pre>
                                    nBoots = n)
 get_quantiles(coefficients2, number_of_variables)</code></pre>
 <pre><code>##     2.5%    97.5% 
-## 42.25184 98.51310 
-##       2.5%      97.5% 
-## -0.3635468  0.1493337 
+## 51.99570 98.17732 
 ##        2.5%       97.5% 
-## -0.53924207 -0.01682477</code></pre>
+## -0.34385736  0.09212052 
+##        2.5%       97.5% 
+## -0.62012783 -0.01596588</code></pre>
 </div>
 <div id="comparison-of-algorithms" class="section level2">
 <h2>Comparison of algorithms</h2>
@@ -469,8 +470,8 @@ microbenchmark(
 ##  coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##   coefficients2 &lt;- speededBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##       min       lq     mean   median       uq      max neval
-##  133.0184 140.7632 151.0498 144.3647 153.6649 213.9901   100
-##  132.1340 140.1120 153.5493 148.8327 160.8385 204.7332   100</code></pre>
+##  135.4926 141.4849 150.8120 144.1176 149.5154 204.4874   100
+##  131.0973 139.6345 147.8596 142.5786 147.4479 205.5953   100</code></pre>
 </div>
 
 

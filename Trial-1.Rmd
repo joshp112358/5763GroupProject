@@ -11,9 +11,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 It will be useful to store variable like this, so when we try to generalize it into an app, it is more straightforward.
 ```{r}
+set.seed(0)
 number_of_variables <- 3
 form <- Age~Weight+Oxygen
-n <- 50
+n <- 100
 
 data <- read.csv(file="~/Desktop/5763GroupProject/data/fitness.csv", header=TRUE, sep=",")
 ```
