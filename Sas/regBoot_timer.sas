@@ -25,7 +25,7 @@
 
 
 /*Sample my data with replacement*/
-	proc surveyselect data=&DataSet out=bootData seed=23434 method=urs noprint sampsize=&NROW;
+	proc surveyselect data=&DataSet out=bootData seed=-23434 method=urs noprint sampsize=&NROW;
 	run;
 
 /*Conduct a regression on this randomised dataset and get parameter estimates*/
