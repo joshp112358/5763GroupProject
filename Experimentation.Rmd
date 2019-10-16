@@ -1,0 +1,324 @@
+---
+title: "Experimentation Log"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Declare Variables and Import Data
+
+It will be useful to store variable like this, so when we try to generalize it into an app, it is more straightforward.
+```{r}
+number_of_variables <- 3
+form <- Age~Weight+Oxygen
+n <- 200
+
+data <- read.csv(file="~/Desktop/5763GroupProject/data/fitness.csv", header=TRUE, sep=",")
+```
+
+## Get quantiles
+
+Need to ask how to index such things so as to store them. 
+
+```{r}
+
+get_quantiles <- function(coeff, num_var){
+  for(i in 1:num_var){
+    #get quantiles
+    #how does one accesss the index of a quantile
+    print(quantile(coeff[,i], probs = c(0.025,0.975)))
+  }
+}
+
+```
+
+## Original Boot Data Function (Slightly Modified)
+
+```{r}
+baselineBootstrap <- function(inputData, num_var,formula, nBoots){
+  
+  for(i in 1:nBoots){
+    #randomly sample data
+    bootData <- inputData[sample(1:nrow(inputData), nrow(inputData), replace = T),]
+    bootLM <- lm(formula, data = bootData)
+    # store the coefs
+    #for optimization put 
+    if(i == 1){
+      bootResults <- matrix(coef(bootLM), ncol = num_var)
+    } else {
+      bootResults<- rbind(bootResults, matrix(coef(bootLM), ncol = num_var))
+    }
+  } # end of i loop
+  return(bootResults)
+}
+
+```
+
+Get the coefficients for a linear model trained on the declared variables above and print quantiles
+
+```{r}
+set.seed(9)
+coefficients1 <- baselineBootstrap(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+
+get_quantiles(coefficients1,number_of_variables)
+```
+
+## SpeededUp 1 
+
+What I tried to improve:
+
+Instantiate matrix with all zeros instead of rbind hell. 
+
+An experiment will need to occur with instantiating a nan matrix
+- (10/15) Result is failure. Instantiating with NaNs slows performance on all metrics but Median
+```{r}
+speedyBoot <- function(inputData, num_var,formula, nBoots){
+  mat <- matrix(0L, nrow = nBoots, ncol = num_var)
+  for(i in 1:nBoots){
+    bootData <- inputData[sample(1:nrow(inputData), nrow(inputData), replace = T),]
+    bootLM <- lm(formula, data = bootData)
+    # store the coefs
+    mat[i,] <- coef(bootLM)
+  } # end of i loop
+  return(mat)
+}
+
+```
+
+Get coefficients and assess quantiles
+
+```{r}
+set.seed(9)
+
+coefficients2 <- speedyBoot(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+get_quantiles(coefficients2, number_of_variables)
+
+```
+
+
+## Comparison of algorithms 
+
+One wants n large so that the gap in performance is larger and more evident. If n is too small, then the performance improvement will be negligible.
+
+```{r}
+
+set.seed(9)
+
+library(microbenchmark)
+microbenchmark(
+  coefficients1 <- baselineBootstrap(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n),
+  coefficients2 <- speedyBoot(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+  
+  )  
+```
+There is improvement. However the difference is so nominal that it could be completely stochastic. Let's test!
+
+```{r}
+
+set.seed(498)
+
+library(microbenchmark)
+microbenchmark(
+  coefficients1 <- baselineBootstrap(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n),
+  coefficients2 <- speedyBoot(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+  
+  )  
+```
+It is stochastic! 
+
+## Speedy 2
+
+Try to improve random sampling bottleneck by removing list enumeration in sample
+```{r}
+
+speedyBoot2 <- function(inputData, num_var,formula, nBoots){
+  mat <- matrix(0L, nrow = nBoots, ncol = num_var)
+  for(i in 1:nBoots){
+    bootData <- inputData[sample(nrow(inputData), nrow(inputData), replace = T),]
+    bootLM <- lm(formula, data = bootData)
+    # store the coefs
+    mat[i,] <- coef(bootLM)
+  } # end of i loop
+  return(mat)
+}
+
+set.seed(9)
+
+coefficients3 <- speedyBoot2(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+get_quantiles(coefficients3, number_of_variables)
+```
+
+```{r}
+set.seed(8)
+microbenchmark(
+  coefficients1 <- baselineBootstrap(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n),
+  coefficients3 <- speedyBoot2(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+  
+  )  
+```
+Check for Stochasticity
+
+```{r}
+set.seed(23892)
+n<- 200
+microbenchmark(
+  coefficients1 <- baselineBootstrap(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n),
+  coefficients3 <- speedyBoot2(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+  
+  )  
+```
+
+## Experiment 3
+
+Parallelization
+
+```{r}
+library(foreach)
+library(doParallel)
+
+cores=detectCores()
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+
+speedy3 <- function(inputData, num_var,formula, nBoots){
+
+  mat <- matrix(0L, nrow = nBoots, ncol = num_var)
+  foreach(i = 1:nBoots) %dopar% {
+    bootLM <- lm(formula, data = inputData[sample(nrow(inputData), nrow(inputData), replace = T),])
+    # store the coefs
+    mat[i,] <- coef(bootLM)
+  }
+  return(mat)
+  
+}
+
+set.seed(9)
+
+
+coefficients4 <- speedy3(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+
+get_quantiles(coefficients4, number_of_variables)
+stopCluster(cl)
+  
+```
+
+test against baseline
+
+```{r}
+set.seed(8)
+
+cores=detectCores()
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+
+microbenchmark(
+  coefficients1 <- baselineBootstrap(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n),
+  coefficients4 <- speedy3(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+  
+  )  
+
+stopCluster(cl)
+  
+```
+no
+
+## experiment 4
+
+```{r}
+speedy4 <- function(inputData, num_var,formula){
+    bootLM <- lm(formula, data = inputData[sample(nrow(inputData), nrow(inputData), replace = T),])
+     return(coef(bootLM))
+}
+
+```
+
+
+make function
+
+```{r}
+
+
+set.seed(9)
+
+cores=detectCores()
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+
+
+bootCoefs <- foreach(i = 1:n, .combine = cbind) %dopar% speedy4(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form)
+
+
+get_quantiles(bootCoefs, number_of_variables)
+stopCluster(cl)
+
+```
+
+Check speed
+```{r}
+
+cores=detectCores()
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+
+microbenchmark(
+  coefficients1 <- baselineBootstrap(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n),
+  
+  bootCoefs <- foreach(i = 1:n, .combine = cbind) %dopar% speedy4(
+                                    inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form)
+
+  )  
+stopCluster(cl)
+
+```
+IDK about errors. It seems ok or the same. Potentially better than before. IDK
