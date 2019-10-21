@@ -377,7 +377,6 @@ data &lt;- read.csv(file=&quot;~/Desktop/5763GroupProject/data/fitness.csv&quot;
 </div>
 <div id="get-quantiles" class="section level2">
 <h2>Get quantiles</h2>
-<p>Need to ask how to index such things so as to store them.</p>
 <pre class="r"><code>get_quantiles &lt;- function(coeff, num_var){
   for(i in 1:num_var){
     #get quantiles
@@ -471,31 +470,9 @@ microbenchmark(
 ##  coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##         coefficients2 &lt;- speedyBoot(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##       min       lq     mean   median       uq      max neval
-##  133.5789 143.7758 193.6508 154.8828 190.3599 795.6000   100
-##  136.0232 145.8165 208.1908 161.2652 227.2137 602.1474   100</code></pre>
-<p>There is improvement. However the difference is so nominal that it could be completely stochastic. Let’s test!</p>
-<pre class="r"><code>set.seed(498)
-
-library(microbenchmark)
-microbenchmark(
-  coefficients1 &lt;- baselineBootstrap(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n),
-  coefficients2 &lt;- speedyBoot(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n)
-  
-  )  </code></pre>
-<pre><code>## Unit: milliseconds
-##                                                                                                                  expr
-##  coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
-##         coefficients2 &lt;- speedyBoot(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
-##       min       lq     mean   median       uq      max neval
-##  133.2648 146.8824 168.7516 157.4868 188.1007 235.9295   100
-##  133.1541 144.0724 159.2174 150.5516 169.6844 227.0567   100</code></pre>
-<p>It is stochastic!</p>
+##  127.9100 143.2442 160.9455 152.6946 169.2403 279.2433   100
+##  127.7749 140.5288 163.4521 150.8295 176.2851 282.8920   100</code></pre>
+<p>There is improvement. However the difference is so nominal that it could be completely stochastic.</p>
 </div>
 <div id="speedy-2" class="section level2">
 <h2>Speedy 2</h2>
@@ -525,6 +502,7 @@ get_quantiles(coefficients3, number_of_variables)</code></pre>
 ##       2.5%      97.5% 
 ## -0.6136807  0.1042451</code></pre>
 <pre class="r"><code>set.seed(8)
+n&lt;- 1000
 microbenchmark(
   coefficients1 &lt;- baselineBootstrap(inputData = data,
                                    num_var = number_of_variables,
@@ -541,96 +519,8 @@ microbenchmark(
 ##  coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##        coefficients3 &lt;- speedyBoot2(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##       min       lq     mean   median       uq      max neval
-##  132.9637 141.9761 163.4414 150.6011 176.0582 246.3348   100
-##  134.0594 140.9567 163.4510 150.5066 183.1295 258.2571   100</code></pre>
-<p>Check for Stochasticity</p>
-<pre class="r"><code>set.seed(23892)
-n&lt;- 200
-microbenchmark(
-  coefficients1 &lt;- baselineBootstrap(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n),
-  coefficients3 &lt;- speedyBoot2(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n)
-  
-  )  </code></pre>
-<pre><code>## Unit: milliseconds
-##                                                                                                                  expr
-##  coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
-##        coefficients3 &lt;- speedyBoot2(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
-##       min       lq     mean   median       uq      max neval
-##  132.8960 142.5517 160.1374 148.6452 176.8258 237.4288   100
-##  132.7335 141.4793 162.7981 151.7555 183.3191 225.4164   100</code></pre>
-</div>
-<div id="experiment-3" class="section level2">
-<h2>Experiment 3</h2>
-<p>Parallelization</p>
-<pre class="r"><code>library(foreach)
-library(doParallel)</code></pre>
-<pre><code>## Loading required package: iterators</code></pre>
-<pre><code>## Loading required package: parallel</code></pre>
-<pre class="r"><code>cores=detectCores()
-cl &lt;- makeCluster(cores[1]-1) #not to overload your computer
-registerDoParallel(cl)
-
-speedy3 &lt;- function(inputData, num_var,formula, nBoots){
-
-  mat &lt;- matrix(0L, nrow = nBoots, ncol = num_var)
-  foreach(i = 1:nBoots) %dopar% {
-    bootLM &lt;- lm(formula, data = inputData[sample(nrow(inputData), nrow(inputData), replace = T),])
-    # store the coefs
-    mat[i,] &lt;- coef(bootLM)
-  }
-  return(mat)
-  
-}
-
-set.seed(9)
-
-
-coefficients4 &lt;- speedy3(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n)
-
-get_quantiles(coefficients4, number_of_variables)</code></pre>
-<pre><code>##  2.5% 97.5% 
-##     0     0 
-##  2.5% 97.5% 
-##     0     0 
-##  2.5% 97.5% 
-##     0     0</code></pre>
-<pre class="r"><code>stopCluster(cl)</code></pre>
-<p>test against baseline</p>
-<pre class="r"><code>set.seed(8)
-
-cores=detectCores()
-cl &lt;- makeCluster(cores[1]-1) #not to overload your computer
-registerDoParallel(cl)
-
-microbenchmark(
-  coefficients1 &lt;- baselineBootstrap(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n),
-  coefficients4 &lt;- speedy3(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n)
-  
-  )  </code></pre>
-<pre><code>## Unit: milliseconds
-##                                                                                                                  expr
-##  coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
-##            coefficients4 &lt;- speedy3(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
-##       min       lq     mean   median       uq      max neval
-##  135.1830 146.5930 190.3372 156.7029 200.5170 609.2315   100
-##  134.5109 157.2091 185.5377 169.2796 201.8788 492.7157   100</code></pre>
-<pre class="r"><code>stopCluster(cl)</code></pre>
-<p>no</p>
+##  668.9691 703.3552 748.3622 732.5565 785.3489 939.1890   100
+##  645.2541 688.7216 740.4761 722.2839 768.6516 966.2532   100</code></pre>
 </div>
 <div id="experiment-4" class="section level2">
 <h2>experiment 4</h2>
@@ -639,30 +529,37 @@ microbenchmark(
      return(coef(bootLM))
 }</code></pre>
 <p>make function</p>
-<pre class="r"><code>set.seed(9)
+<pre class="r"><code>library(foreach)
+library(doParallel)</code></pre>
+<pre><code>## Loading required package: iterators</code></pre>
+<pre><code>## Loading required package: parallel</code></pre>
+<pre class="r"><code>n&lt;-200
+set.seed(9)
 
 cores=detectCores()
 cl &lt;- makeCluster(cores[1]-1) #not to overload your computer
 registerDoParallel(cl)
+clusterSetRNGStream(cl=cl,9)
 
-
-bootCoefs &lt;- foreach(i = 1:n, .combine = cbind) %dopar% speedy4(inputData = data,
+bootCoefs &lt;- foreach(i = 1:n, .combine =rbind) %dopar% speedy4(inputData = data,
                                    num_var = number_of_variables,
                                    formula = form)
 
 
 get_quantiles(bootCoefs, number_of_variables)</code></pre>
-<pre><code>##       2.5%      97.5% 
-## -0.4909766 93.9616886 
-##       2.5%      97.5% 
-## -0.2436453 73.1234787 
-##       2.5%      97.5% 
-## -0.3984445 73.9164522</code></pre>
+<pre><code>##     2.5%    97.5% 
+## 53.11104 99.92509 
+##        2.5%       97.5% 
+## -0.36888342  0.03656095 
+##        2.5%       97.5% 
+## -0.67394348 -0.01255995</code></pre>
 <pre class="r"><code>stopCluster(cl)</code></pre>
 <p>Check speed</p>
 <pre class="r"><code>cores=detectCores()
 cl &lt;- makeCluster(cores[1]-1) #not to overload your computer
 registerDoParallel(cl)
+clusterSetRNGStream(cl=cl,9)
+n&lt;-1000
 
 microbenchmark(
   coefficients1 &lt;- baselineBootstrap(inputData = data,
@@ -670,7 +567,7 @@ microbenchmark(
                                    formula = form,
                                    nBoots = n),
   
-  bootCoefs &lt;- foreach(i = 1:n, .combine = cbind) %dopar% speedy4(
+  bootCoefs &lt;- foreach(i = 1:n, .combine = rbind) %dopar% speedy4(
                                     inputData = data,
                                    num_var = number_of_variables,
                                    formula = form)
@@ -679,12 +576,11 @@ microbenchmark(
 <pre><code>## Unit: milliseconds
 ##                                                                                                                                   expr
 ##                   coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
-##  bootCoefs &lt;- foreach(i = 1:n, .combine = cbind) %dopar% speedy4(inputData = data,      num_var = number_of_variables, formula = form)
-##       min       lq     mean   median       uq      max neval
-##  156.5179 175.8639 202.4928 196.8214 224.2124 309.5326   100
-##  165.6321 172.3279 199.7886 186.9666 218.0335 367.9900   100</code></pre>
+##  bootCoefs &lt;- foreach(i = 1:n, .combine = rbind) %dopar% speedy4(inputData = data,      num_var = number_of_variables, formula = form)
+##       min       lq     mean   median       uq       max neval
+##  652.6307 712.9005 745.5873 735.5217 761.9037 1042.9266   100
+##  628.8516 706.4043 735.3229 734.1860 762.5622  968.0211   100</code></pre>
 <pre class="r"><code>stopCluster(cl)</code></pre>
-<p>IDK about errors. It seems ok or the same. Potentially better than before. IDK</p>
 </div>
 
 

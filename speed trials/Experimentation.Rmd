@@ -20,8 +20,6 @@ data <- read.csv(file="~/Desktop/5763GroupProject/data/fitness.csv", header=TRUE
 
 ## Get quantiles
 
-Need to ask how to index such things so as to store them. 
-
 ```{r}
 
 get_quantiles <- function(coeff, num_var){
@@ -125,26 +123,7 @@ microbenchmark(
   
   )  
 ```
-There is improvement. However the difference is so nominal that it could be completely stochastic. Let's test!
-
-```{r}
-
-set.seed(498)
-
-library(microbenchmark)
-microbenchmark(
-  coefficients1 <- baselineBootstrap(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n),
-  coefficients2 <- speedyBoot(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n)
-  
-  )  
-```
-It is stochastic! 
+There is improvement. However the difference is so nominal that it could be completely stochastic. 
 
 ## Speedy 2
 
@@ -173,6 +152,7 @@ get_quantiles(coefficients3, number_of_variables)
 
 ```{r}
 set.seed(8)
+n<- 1000
 microbenchmark(
   coefficients1 <- baselineBootstrap(inputData = data,
                                    num_var = number_of_variables,
@@ -185,86 +165,6 @@ microbenchmark(
   
   )  
 ```
-Check for Stochasticity
-
-```{r}
-set.seed(23892)
-n<- 200
-microbenchmark(
-  coefficients1 <- baselineBootstrap(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n),
-  coefficients3 <- speedyBoot2(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n)
-  
-  )  
-```
-
-## Experiment 3
-
-Parallelization
-
-```{r}
-library(foreach)
-library(doParallel)
-
-cores=detectCores()
-cl <- makeCluster(cores[1]-1) #not to overload your computer
-registerDoParallel(cl)
-
-speedy3 <- function(inputData, num_var,formula, nBoots){
-
-  mat <- matrix(0L, nrow = nBoots, ncol = num_var)
-  foreach(i = 1:nBoots) %dopar% {
-    bootLM <- lm(formula, data = inputData[sample(nrow(inputData), nrow(inputData), replace = T),])
-    # store the coefs
-    mat[i,] <- coef(bootLM)
-  }
-  return(mat)
-  
-}
-
-set.seed(9)
-
-
-coefficients4 <- speedy3(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n)
-
-get_quantiles(coefficients4, number_of_variables)
-stopCluster(cl)
-  
-```
-
-test against baseline
-
-```{r}
-set.seed(8)
-
-cores=detectCores()
-cl <- makeCluster(cores[1]-1) #not to overload your computer
-registerDoParallel(cl)
-
-microbenchmark(
-  coefficients1 <- baselineBootstrap(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n),
-  coefficients4 <- speedy3(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n)
-  
-  )  
-
-stopCluster(cl)
-  
-```
-no
 
 ## experiment 4
 
@@ -280,16 +180,17 @@ speedy4 <- function(inputData, num_var,formula){
 make function
 
 ```{r}
-
-
+library(foreach)
+library(doParallel)
+n<-200
 set.seed(9)
 
 cores=detectCores()
 cl <- makeCluster(cores[1]-1) #not to overload your computer
 registerDoParallel(cl)
+clusterSetRNGStream(cl=cl,9)
 
-
-bootCoefs <- foreach(i = 1:n, .combine = cbind) %dopar% speedy4(inputData = data,
+bootCoefs <- foreach(i = 1:n, .combine =rbind) %dopar% speedy4(inputData = data,
                                    num_var = number_of_variables,
                                    formula = form)
 
@@ -301,10 +202,11 @@ stopCluster(cl)
 
 Check speed
 ```{r}
-
 cores=detectCores()
 cl <- makeCluster(cores[1]-1) #not to overload your computer
 registerDoParallel(cl)
+clusterSetRNGStream(cl=cl,9)
+n<-1000
 
 microbenchmark(
   coefficients1 <- baselineBootstrap(inputData = data,
@@ -312,7 +214,7 @@ microbenchmark(
                                    formula = form,
                                    nBoots = n),
   
-  bootCoefs <- foreach(i = 1:n, .combine = cbind) %dopar% speedy4(
+  bootCoefs <- foreach(i = 1:n, .combine = rbind) %dopar% speedy4(
                                     inputData = data,
                                    num_var = number_of_variables,
                                    formula = form)
@@ -321,4 +223,3 @@ microbenchmark(
 stopCluster(cl)
 
 ```
-IDK about errors. It seems ok or the same. Potentially better than before. IDK
