@@ -20,14 +20,16 @@ data <- read.csv(file="~/Desktop/5763GroupProject/data/fitness.csv", header=TRUE
 
 ## Get quantiles
 
+This is a useful helper function. The inputs are the coefficients of the bootstraps and outputs a matrix, whose ith column represents the ith covariate, the 1st row, the bottom 2.5% quantiles, and the 2nd the top 97.5% quartile. In otherwords, the ith column is the 95% confidence.
 ```{r}
 
 get_quantiles <- function(coeff, num_var){
+  mat <- matrix(0L, nrow = 2, ncol = num_var)
   for(i in 1:num_var){
-    #get quantiles
-    #how does one accesss the index of a quantile
-    print(quantile(coeff[,i], probs = c(0.025,0.975)))
+    mat[,i]<-matrix(quantile(coeff[,i], probs = c(0.025,0.975)))
   }
+  #print(mat)
+  return(mat)
 }
 
 ```
@@ -66,71 +68,17 @@ coefficients1 <- baselineBootstrap(inputData = data,
 get_quantiles(coefficients1,number_of_variables)
 ```
 
-## SpeededUp 1 
+## Speeded Up Code
 
-What I tried to improve:
+What needed to improve:
 
-Instantiate matrix with all zeros instead of rbind hell. 
+1. Instantiate matrix with all zeros instead of rbind hell. 
 
-An experiment will need to occur with instantiating a nan matrix
-- (10/15) Result is failure. Instantiating with NaNs slows performance on all metrics but Median
+2. Improve random sampling bottleneck by removing list enumeration in sample function. 
+
 ```{r}
+
 speedyBoot <- function(inputData, num_var,formula, nBoots){
-  mat <- matrix(0L, nrow = nBoots, ncol = num_var)
-  for(i in 1:nBoots){
-    bootData <- inputData[sample(1:nrow(inputData), nrow(inputData), replace = T),]
-    bootLM <- lm(formula, data = bootData)
-    # store the coefs
-    mat[i,] <- coef(bootLM)
-  } # end of i loop
-  return(mat)
-}
-
-```
-
-Get coefficients and assess quantiles
-
-```{r}
-set.seed(9)
-
-coefficients2 <- speedyBoot(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n)
-get_quantiles(coefficients2, number_of_variables)
-
-```
-
-
-## Comparison of algorithms 
-
-One wants n large so that the gap in performance is larger and more evident. If n is too small, then the performance improvement will be negligible.
-
-```{r}
-
-set.seed(9)
-
-library(microbenchmark)
-microbenchmark(
-  coefficients1 <- baselineBootstrap(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n),
-  coefficients2 <- speedyBoot(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n)
-  
-  )  
-```
-There is improvement. However the difference is so nominal that it could be completely stochastic. 
-
-## Speedy 2
-
-Try to improve random sampling bottleneck by removing list enumeration in sample
-```{r}
-
-speedyBoot2 <- function(inputData, num_var,formula, nBoots){
   mat <- matrix(0L, nrow = nBoots, ncol = num_var)
   for(i in 1:nBoots){
     bootData <- inputData[sample(nrow(inputData), nrow(inputData), replace = T),]
@@ -143,30 +91,35 @@ speedyBoot2 <- function(inputData, num_var,formula, nBoots){
 
 set.seed(9)
 
-coefficients3 <- speedyBoot2(inputData = data,
+coefficients1 <- speedyBoot(inputData = data,
                                    num_var = number_of_variables,
                                    formula = form,
                                    nBoots = n)
-get_quantiles(coefficients3, number_of_variables)
+get_quantiles(coefficients1, number_of_variables)
 ```
 
 ```{r}
+library(microbenchmark)
 set.seed(8)
-n<- 1000
+n<- 100
 microbenchmark(
-  coefficients1 <- baselineBootstrap(inputData = data,
+  baselineBootstrap(inputData = data,
                                    num_var = number_of_variables,
                                    formula = form,
                                    nBoots = n),
-  coefficients3 <- speedyBoot2(inputData = data,
+  speedyBoot(inputData = data,
                                    num_var = number_of_variables,
                                    formula = form,
                                    nBoots = n)
   
-  )  
+  ) 
 ```
 
-## experiment 4
+
+
+## Post Parallelization
+
+Define a function to call in each loop of parallelization
 
 ```{r}
 speedy4 <- function(inputData, num_var,formula){
@@ -176,13 +129,13 @@ speedy4 <- function(inputData, num_var,formula){
 
 ```
 
+Define function
 
-make function
 
 ```{r}
 library(foreach)
 library(doParallel)
-n<-200
+
 set.seed(9)
 
 cores=detectCores()
@@ -206,7 +159,7 @@ cores=detectCores()
 cl <- makeCluster(cores[1]-1) #not to overload your computer
 registerDoParallel(cl)
 clusterSetRNGStream(cl=cl,9)
-n<-1000
+n<-100
 
 microbenchmark(
   coefficients1 <- baselineBootstrap(inputData = data,
