@@ -27,7 +27,7 @@ ui <- fluidPage(
                               value = 1000),
                            ),
     mainPanel("main panel",
-              tableOutput("confidenceIntervals"),
+              uiOutput("table"),
               plotOutput("hist"))
 )
 

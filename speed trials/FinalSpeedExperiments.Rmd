@@ -65,7 +65,7 @@ coefficients1 <- baselineBootstrap(inputData = data,
                                    formula = form,
                                    nBoots = n)
 
-get_quantiles(coefficients1,number_of_variables)
+m <- get_quantiles(coefficients1,number_of_variables)
 ```
 
 ## Speeded Up Code

@@ -5,8 +5,8 @@ account: joshyp
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1369256
-bundleId: 2528987
+bundleId: 2529148
 url: https://joshyp.shinyapps.io/statsy/
-when: 1571833450.33364
+when: 1571836448.54237
 asMultiple: FALSE
 asStatic: FALSE
