@@ -8,25 +8,27 @@ library(shiny)
 #controlled by the user and an output which the code reacts to.
 
 ui <- fluidPage(
-    sidebarPanel("Place Data Here",
+    sidebarPanel("This function will accept an arbitrary number of covariates,
+                 but requires you to type in the formula and only display coefficients
+                 for the first two terms",
                  fileInput(inputId = "data",
-                           label = "Input CSV",
+                           label = "Input CSV Below by Pressing Browse",
                            accept = c(
                                "text/csv",
                                "text/comma-separated-values,text/plain",
                                ".csv"),
                            buttonLabel = "Browse..."),
                  textInput(inputId = "formula",
-                           label = "Linear Regression Formula",
+                           label = "Linear Regression Formula in R format",
                            value = "Age~Weight"),
                  numericInput(inputId = "num_of_var",
-                              label = "Number of Variables",
+                              label = "Number of Variables (Covariates + 1)",
                               value = 2),
                  numericInput(inputId = "num_of_boots",
-                              label = "Number of Boots",
+                              label = "Number of Bootstraps",
                               value = 1000),
                            ),
-    mainPanel("main panel",
+    mainPanel("Results",
               uiOutput("mean"), 
               uiOutput("table"),
               plotOutput("hist1"),

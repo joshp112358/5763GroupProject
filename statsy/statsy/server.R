@@ -26,7 +26,7 @@ server <- function(input, output) {
                                nBoots = n)
     mean1<-mean(coefficients2[,1])
     mean2<-mean(coefficients2[,2])
-    print(paste("intercept", mean1,"coeff1", mean2));
+    print(paste("####Mean intercept:", mean1,",Mean coeff1:", mean2));
 
     })
   
@@ -60,12 +60,15 @@ server <- function(input, output) {
           mat[,i]<-matrix(quantile(coeff[,i], probs = c(0.025,0.975)))
         }
         #print(mat)
+        colnames(mat)=c("Intercept","Coeff1")
+        rownames(mat)=c("2.5% Quartile","97.5% Quartiles")
         return(mat)
       }
       
       get_quantiles(coefficients2,number_of_variables)
 
-    }
+    },
+    rownames = TRUE
   )
   
   output$hist1 <- renderPlot({
@@ -93,7 +96,10 @@ server <- function(input, output) {
                                nBoots = n)
     
     
-    hist(coefficients2[,1])
+    hist(coefficients2[,1],
+         main = "Intercept Value",
+         xlab = "Bootstrap Values")
+    
     
     })
   output$hist2 <- renderPlot({
@@ -121,7 +127,9 @@ server <- function(input, output) {
                                nBoots = n)
     
     
-    hist(coefficients2[,2])
+    hist(coefficients2[,2],
+         main = "Coefficient 1",
+         xlab = "Bootstrap Values")
     
   })
 }
