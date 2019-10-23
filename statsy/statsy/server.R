@@ -55,63 +55,37 @@ server <- function(input, output) {
   )
   
   output$hist1 <- renderPlot({
-    inFile <- input$data
-    data <- read.csv(inFile$datapath)
-    number_of_variables <- input$num_of_var
-    form <- input$formula
-    n <- input$num_of_boots
-    
-    # Helper Function
-    set.seed(9)
-    speedyBoot <- function(inputData, num_var,formula, nBoots){
-      mat <- matrix(0L, nrow = nBoots, ncol = num_var)
-      for(i in 1:nBoots){
-        bootData <- inputData[sample(nrow(inputData), nrow(inputData), replace = T),]
-        bootLM <- lm(formula, data = bootData)
-        # store the coefs
-        mat[i,] <- coef(bootLM)
-      } # end of i loop
-      return(mat)
-    }
-    coefficients2 <-speedyBoot(inputData = data,
-                               num_var = number_of_variables,
-                               formula = form,
-                               nBoots = n)
-    
-    
-    hist(coefficients2[,1],
+    hist(coefficients2()[,1],
          main = "Intercept Value",
          xlab = "Bootstrap Values")
     
     
     })
   output$hist2 <- renderPlot({
-    inFile <- input$data
-    data <- read.csv(inFile$datapath)
-    number_of_variables <- input$num_of_var
-    form <- input$formula
-    n <- input$num_of_boots
     
-    # Helper Function
-    set.seed(9)
-    speedyBoot <- function(inputData, num_var,formula, nBoots){
-      mat <- matrix(0L, nrow = nBoots, ncol = num_var)
-      for(i in 1:nBoots){
-        bootData <- inputData[sample(nrow(inputData), nrow(inputData), replace = T),]
-        bootLM <- lm(formula, data = bootData)
-        # store the coefs
-        mat[i,] <- coef(bootLM)
-      } # end of i loop
-      return(mat)
-    }
-    coefficients2 <-speedyBoot(inputData = data,
-                               num_var = number_of_variables,
-                               formula = form,
-                               nBoots = n)
-    
-    
-    hist(coefficients2[,2],
+    hist(coefficients2()[,2],
          main = "Coefficient 1",
+         xlab = "Bootstrap Values")
+    
+  })
+  output$hist3 <- renderPlot({
+    
+    hist(coefficients2()[,3],
+         main = "Coefficient 3",
+         xlab = "Bootstrap Values")
+    
+  })
+  output$hist4 <- renderPlot({
+    
+    hist(coefficients2()[,4],
+         main = "Coefficient 4",
+         xlab = "Bootstrap Values")
+    
+  })
+  output$hist5 <- renderPlot({
+    
+    hist(coefficients2()[,5],
+         main = "Coefficient 5",
          xlab = "Bootstrap Values")
     
   })

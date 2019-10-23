@@ -10,7 +10,7 @@ library(shiny)
 ui <- fluidPage(
     sidebarPanel("This function will accept an arbitrary number of covariates,
                  but requires you to type in the formula and only display coefficients
-                 for the first two terms",
+                 for the first five terms",
                  fileInput(inputId = "data",
                            label = "Input CSV Below by Pressing Browse",
                            accept = c(
@@ -32,7 +32,10 @@ ui <- fluidPage(
               uiOutput("mean"), 
               uiOutput("table"),
               plotOutput("hist1"),
-              plotOutput("hist2"))
+              plotOutput("hist2"),
+              plotOutput("hist3"),
+              plotOutput("hist4"),
+              plotOutput("hist5"))
 )
 
 
