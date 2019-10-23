@@ -370,7 +370,7 @@ summary {
 <h2>Declare Variables and Import Data</h2>
 <p>It will be useful to store variable like this, so when we try to generalize it into an app, it is more straightforward.</p>
 <pre class="r"><code>number_of_variables &lt;- 3
-form &lt;- Age~Weight+Oxygen
+form &lt;- &quot;Age~Weight+Oxygen&quot;
 n &lt;- 200
 
 data &lt;- read.csv(file=&quot;~/Desktop/5763GroupProject/data/fitness.csv&quot;, header=TRUE, sep=&quot;,&quot;)</code></pre>
@@ -436,11 +436,6 @@ get_quantiles(coefficients1,number_of_variables)</code></pre>
 }
 
 set.seed(9)
-
-coefficients1 &lt;- speedyBoot(inputData = data,
-                                   num_var = number_of_variables,
-                                   formula = form,
-                                   nBoots = n)
 get_quantiles(coefficients1, number_of_variables)</code></pre>
 <pre><code>##          [,1]        [,2]       [,3]
 ## [1,] 49.23226 -0.37527171 -0.6136807
@@ -464,8 +459,8 @@ microbenchmark(
 ##  baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##         speedyBoot(inputData = data, num_var = number_of_variables, formula = form,      nBoots = n)
 ##       min       lq     mean   median       uq      max neval
-##  81.37756 85.35867 90.65951 86.99796 91.24729 131.3541   100
-##  79.94700 83.78499 87.88405 85.16475 87.15353 124.2686   100</code></pre>
+##  84.60654 87.52516 90.72013 88.87191 90.37732 125.9625   100
+##  82.96541 86.72257 89.91150 88.13057 89.58970 132.3666   100</code></pre>
 </div>
 <div id="post-parallelization" class="section level2">
 <h2>Post Parallelization</h2>
@@ -492,16 +487,16 @@ bootCoefs &lt;- foreach(i = 1:n, .combine =rbind) %dopar% speedy4(inputData = da
 
 
 get_quantiles(bootCoefs, number_of_variables)</code></pre>
-<pre><code>##          [,1]         [,2]        [,3]
-## [1,] 56.00455 -0.396794572 -0.68320591
-## [2,] 99.54931  0.001758728 -0.02376201</code></pre>
+<pre><code>##          [,1]        [,2]        [,3]
+## [1,] 56.00455 -0.39679457 -0.68320591
+## [2,] 99.54931 -0.01445502 -0.02376201</code></pre>
 <pre class="r"><code>stopCluster(cl)</code></pre>
 <p>Check speed</p>
 <pre class="r"><code>cores=detectCores()
 cl &lt;- makeCluster(cores[1]-1) #not to overload your computer
 registerDoParallel(cl)
 clusterSetRNGStream(cl=cl,9)
-n&lt;-100
+n&lt;-1000
 
 microbenchmark(
   coefficients1 &lt;- baselineBootstrap(inputData = data,
@@ -520,8 +515,8 @@ microbenchmark(
 ##                   coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##  bootCoefs &lt;- foreach(i = 1:n, .combine = rbind) %dopar% speedy4(inputData = data,      num_var = number_of_variables, formula = form)
 ##       min       lq     mean   median       uq       max neval
-##  82.59189 86.99926 93.35844 89.50141 93.46591 134.32045   100
-##  49.41238 52.99831 59.37780 55.00387 60.54143  88.70356   100</code></pre>
+##  865.0594 915.7848 946.8513 932.0263 969.0773 1151.2357   100
+##  461.2238 481.5113 510.1417 500.6409 515.3215  824.0854   100</code></pre>
 <pre class="r"><code>stopCluster(cl)</code></pre>
 </div>
 
