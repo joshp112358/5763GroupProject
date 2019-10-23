@@ -8,7 +8,7 @@ library(shiny)
 #controlled by the user and an output which the code reacts to.
 
 ui <- fluidPage(
-    sidebarPanel("sidebar panel",
+    sidebarPanel("Place Data Here",
                  fileInput(inputId = "data",
                            label = "Input CSV",
                            accept = c(
@@ -17,18 +17,20 @@ ui <- fluidPage(
                                ".csv"),
                            buttonLabel = "Browse..."),
                  textInput(inputId = "formula",
-                           label = "Y~bX",
-                           value = "Age~Weight+Oxygen"),
+                           label = "Linear Regression Formula",
+                           value = "Age~Weight"),
                  numericInput(inputId = "num_of_var",
                               label = "Number of Variables",
-                              value = 3),
+                              value = 2),
                  numericInput(inputId = "num_of_boots",
                               label = "Number of Boots",
                               value = 1000),
                            ),
     mainPanel("main panel",
+              uiOutput("mean"), 
               uiOutput("table"),
-              plotOutput("hist"))
+              plotOutput("hist1"),
+              plotOutput("hist2"))
 )
 
 

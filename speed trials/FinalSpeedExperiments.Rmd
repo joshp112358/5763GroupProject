@@ -65,7 +65,7 @@ coefficients1 <- baselineBootstrap(inputData = data,
                                    formula = form,
                                    nBoots = n)
 
-m <- get_quantiles(coefficients1,number_of_variables)
+get_quantiles(coefficients1,number_of_variables)
 ```
 
 ## Speeded Up Code
@@ -90,7 +90,11 @@ speedyBoot <- function(inputData, num_var,formula, nBoots){
 }
 
 set.seed(9)
-get_quantiles(coefficients1, number_of_variables)
+coefficients2 <-speedyBoot(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+get_quantiles(coefficients2, number_of_variables)
 ```
 
 ```{r}
