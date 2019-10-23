@@ -33,7 +33,7 @@ server <- function(input, output) {
       for(i in 1:number_of_variables){
         holder[i]<-mean(coefficients2()[,i])
       }
-    print(holder);
+    print(paste("mean of covariates in order",holder));
     })
   
   output$table <- renderTable({
@@ -55,38 +55,38 @@ server <- function(input, output) {
   )
   
   output$hist1 <- renderPlot({
+    mx<-mean(coefficients2()[,1])
     hist(coefficients2()[,1],
          main = "Intercept Value",
          xlab = "Bootstrap Values")
-    
-    
+    abline(v = mx, col = "blue", lwd = 2)
     })
   output$hist2 <- renderPlot({
-    
+    mx<-mean(coefficients2()[,2])
     hist(coefficients2()[,2],
          main = "Coefficient 1",
          xlab = "Bootstrap Values")
-    
+    abline(v = mx, col = "blue", lwd = 2)
   })
   output$hist3 <- renderPlot({
-    
+    mx<-mean(coefficients2()[,3])
     hist(coefficients2()[,3],
          main = "Coefficient 3",
          xlab = "Bootstrap Values")
-    
+    abline(v = mx, col = "blue", lwd = 2)
   })
   output$hist4 <- renderPlot({
-    
+    mx<-mean(coefficients2()[,4])
     hist(coefficients2()[,4],
          main = "Coefficient 4",
          xlab = "Bootstrap Values")
-    
+    abline(v = mx, col = "blue", lwd = 2)
   })
   output$hist5 <- renderPlot({
-    
+    mx<-mean(coefficients2()[,5])
     hist(coefficients2()[,5],
          main = "Coefficient 5",
          xlab = "Bootstrap Values")
-    
+    abline(v = mx, col = "blue", lwd = 2)
   })
 }
