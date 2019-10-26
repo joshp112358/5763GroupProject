@@ -26,15 +26,16 @@ server <- function(input, output) {
   
   
   
-  output$mean <- renderText(
+  output$mean <- renderTable(
     {
       number_of_variables <- input$num_of_var
-      holder = numeric(number_of_variables)
+      mat <- matrix(0L, nrow = 1, ncol = number_of_variables)
       for(i in 1:number_of_variables){
-        holder[i]<-mean(coefficients2()[,i])
+        mat[,i]<-mean(coefficients2()[,i])
       }
-    print(paste("mean of covariates in order",holder));
-    })
+      rownames(mat)=c("Mean Values")
+    return(mat);
+    }, rownames = TRUE)
   
   output$table <- renderTable({
     number_of_variables <- input$num_of_var
