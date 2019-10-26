@@ -23,34 +23,34 @@ server <- function(input, output) {
                              num_var = number_of_variables,
                              formula = form,
                              nBoots = n)})
-  
-  
-  
-  output$mean <- renderTable(
-    {
-      number_of_variables <- input$num_of_var
-      mat <- matrix(0L, nrow = 1, ncol = number_of_variables)
-      for(i in 1:number_of_variables){
-        mat[,i]<-mean(coefficients2()[,i])
-      }
-      rownames(mat)=c("Mean Values")
+  meanTable <- reactive({
+    number_of_variables <- input$num_of_var
+    coeff <- coefficients2()
+    mat <- matrix(0L, nrow = 1, ncol = number_of_variables)
+    for(i in 1:number_of_variables){
+      mat[,i]<-mean(coeff[,i])
+    }
+    rownames(mat)=c("Mean Values")
     return(mat);
-    }, rownames = TRUE)
+  })
+  
+  quantileTable <- reactive({
+    number_of_variables <- input$num_of_var
+    get_quantiles <- function(coeff, num_var){
+    mat <- matrix(0L, nrow = 2, ncol = num_var)
+    for(i in 1:num_var){
+      mat[,i]<-matrix(quantile(coeff[,i], probs = c(0.025,0.975)))
+    }
+    #print(mat)
+    rownames(mat)=c("2.5% Quartile","97.5% Quartiles")
+    return(mat)
+  }
+    get_quantiles(coefficients2(),number_of_variables)})
+  
+  output$mean <- renderTable({meanTable()}, rownames = TRUE)
   
   output$table <- renderTable({
-    number_of_variables <- input$num_of_var
-      get_quantiles <- function(coeff, num_var){
-        mat <- matrix(0L, nrow = 2, ncol = num_var)
-        for(i in 1:num_var){
-          mat[,i]<-matrix(quantile(coeff[,i], probs = c(0.025,0.975)))
-        }
-        #print(mat)
-        rownames(mat)=c("2.5% Quartile","97.5% Quartiles")
-        return(mat)
-      }
-      
-      get_quantiles(coefficients2(),number_of_variables)
-
+    quantileTable()
     },
     rownames = TRUE
   )
