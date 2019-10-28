@@ -1,4 +1,8 @@
 library(shiny)
+library(owmr)
+library(leaflet)
+
+owmr_settings("e366d11329936ebfaaf4cf08af0ff523")
 
 server <- function(input, output) {
   speedyBoot <- function(inputData, num_var,formula, nBoots){
@@ -54,7 +58,7 @@ server <- function(input, output) {
     },
     rownames = TRUE
   )
-  
+#################################################
   output$hist1 <- renderPlot({
     mx<-mean(coefficients2()[,1])
     hist(coefficients2()[,1],
@@ -89,5 +93,15 @@ server <- function(input, output) {
          main = "Coefficient 5",
          xlab = "Bootstrap Values")
     abline(v = mx, col = "blue", lwd = 2)
+  })
+#################################################
+  points <- eventReactive(input$recalc, {
+    cbind(rnorm(40) * 2 + 13, rnorm(40) + 48)
+  }, ignoreNULL = FALSE)
+  
+  output$weather <- renderPrint({
+    owm_data <- find_city("St Andrews, GB", units = "metric")
+    x<-owm_data$list
+    print(paste("temp in sta in celsius", x$main.temp))
   })
 }
