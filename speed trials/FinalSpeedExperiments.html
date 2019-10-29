@@ -436,7 +436,11 @@ get_quantiles(coefficients1,number_of_variables)</code></pre>
 }
 
 set.seed(9)
-get_quantiles(coefficients1, number_of_variables)</code></pre>
+coefficients2 &lt;-speedyBoot(inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form,
+                                   nBoots = n)
+get_quantiles(coefficients2, number_of_variables)</code></pre>
 <pre><code>##          [,1]        [,2]       [,3]
 ## [1,] 49.23226 -0.37527171 -0.6136807
 ## [2,] 98.76897  0.05641607  0.1042451</code></pre>
@@ -459,8 +463,8 @@ microbenchmark(
 ##  baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##         speedyBoot(inputData = data, num_var = number_of_variables, formula = form,      nBoots = n)
 ##       min       lq     mean   median       uq      max neval
-##  84.60654 87.52516 90.72013 88.87191 90.37732 125.9625   100
-##  82.96541 86.72257 89.91150 88.13057 89.58970 132.3666   100</code></pre>
+##  71.69676 83.41923 104.7118 100.5899 110.2474 305.5427   100
+##  70.71356 83.45356 111.3900 100.0209 121.6452 269.9393   100</code></pre>
 </div>
 <div id="post-parallelization" class="section level2">
 <h2>Post Parallelization</h2>
@@ -487,9 +491,9 @@ bootCoefs &lt;- foreach(i = 1:n, .combine =rbind) %dopar% speedy4(inputData = da
 
 
 get_quantiles(bootCoefs, number_of_variables)</code></pre>
-<pre><code>##          [,1]        [,2]        [,3]
-## [1,] 56.00455 -0.39679457 -0.68320591
-## [2,] 99.54931 -0.01445502 -0.02376201</code></pre>
+<pre><code>##           [,1]        [,2]        [,3]
+## [1,]  53.91828 -0.39241458 -0.67908479
+## [2,] 101.87962  0.03086209  0.00105602</code></pre>
 <pre class="r"><code>stopCluster(cl)</code></pre>
 <p>Check speed</p>
 <pre class="r"><code>cores=detectCores()
@@ -514,10 +518,48 @@ microbenchmark(
 ##                                                                                                                                   expr
 ##                   coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##  bootCoefs &lt;- foreach(i = 1:n, .combine = rbind) %dopar% speedy4(inputData = data,      num_var = number_of_variables, formula = form)
-##       min       lq     mean   median       uq       max neval
-##  865.0594 915.7848 946.8513 932.0263 969.0773 1151.2357   100
-##  461.2238 481.5113 510.1417 500.6409 515.3215  824.0854   100</code></pre>
+##       min       lq     mean   median        uq      max neval
+##  793.2626 918.4787 1006.950 961.2337 1026.5654 2234.295   100
+##  759.0463 896.7102  951.975 921.1053  964.9668 1733.312   100</code></pre>
 <pre class="r"><code>stopCluster(cl)</code></pre>
+</div>
+<div id="comparison-against-boot" class="section level2">
+<h2>Comparison against boot</h2>
+<pre class="r"><code>library(boot)
+# https://www.statmethods.net/advstats/bootstrapping.html
+# function to obtain regression weights
+bs &lt;- function(formula, data, indices) {
+  d &lt;- data[indices,] # allows boot to select sample
+  fit &lt;- lm(formula, data=d)
+  return(coef(fit))
+}
+
+cores=detectCores()
+cl &lt;- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+clusterSetRNGStream(cl=cl,9)
+n&lt;-1000
+
+microbenchmark(
+  # bootstrapping with 1000 replications
+  results &lt;- boot(data=data, statistic=bs,
+   R=n, formula=form), 
+  
+  bootCoefs &lt;- foreach(i = 1:n, .combine = rbind) %dopar% speedy4(
+                                    inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form)
+
+  )  </code></pre>
+<pre><code>## Unit: milliseconds
+##                                                                                                                                   expr
+##                                                                    results &lt;- boot(data = data, statistic = bs, R = n, formula = form)
+##  bootCoefs &lt;- foreach(i = 1:n, .combine = rbind) %dopar% speedy4(inputData = data,      num_var = number_of_variables, formula = form)
+##       min       lq     mean   median        uq      max neval
+##  788.2955 904.9569 974.7135 947.9171 1008.0775 1418.630   100
+##  744.3324 910.1600 973.2177 934.2345  998.0073 1704.391   100</code></pre>
+<pre class="r"><code>stopCluster(cl)</code></pre>
+<p>The function is approximately the same speed as the boot library</p>
 </div>
 
 

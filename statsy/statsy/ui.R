@@ -52,7 +52,9 @@ ui <- fluidPage(
                 plotOutput("hist5")
               ),
               tabPanel("StA Temp",
-                uiOutput("weather")
+                       #leafletOutput
+                uiOutput("weather"),
+                actionButton("retemp", "refresh")
               )
             ))
 )

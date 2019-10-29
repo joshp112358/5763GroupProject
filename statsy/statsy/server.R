@@ -95,13 +95,14 @@ server <- function(input, output) {
     abline(v = mx, col = "blue", lwd = 2)
   })
 #################################################
-  points <- eventReactive(input$recalc, {
-    cbind(rnorm(40) * 2 + 13, rnorm(40) + 48)
+  points <- eventReactive(input$retemp, {
+    owm_data <- find_city("St Andrews, GB", units = "metric")
+    x<-owm_data$list
+    return(x$main.temp)
   }, ignoreNULL = FALSE)
   
   output$weather <- renderPrint({
-    owm_data <- find_city("St Andrews, GB", units = "metric")
-    x<-owm_data$list
-    print(paste("temp in sta in celsius", x$main.temp))
+    
+    print(paste("temp in sta in celsius", points()))
   })
 }

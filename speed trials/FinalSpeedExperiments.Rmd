@@ -175,3 +175,39 @@ microbenchmark(
 stopCluster(cl)
 
 ```
+
+
+## Comparison against boot
+
+```{r}
+library(boot)
+# https://www.statmethods.net/advstats/bootstrapping.html
+# function to obtain regression weights
+bs <- function(formula, data, indices) {
+  d <- data[indices,] # allows boot to select sample
+  fit <- lm(formula, data=d)
+  return(coef(fit))
+}
+
+cores=detectCores()
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+clusterSetRNGStream(cl=cl,9)
+n<-1000
+
+microbenchmark(
+  # bootstrapping with 1000 replications
+  results <- boot(data=data, statistic=bs,
+   R=n, formula=form), 
+  
+  bootCoefs <- foreach(i = 1:n, .combine = rbind) %dopar% speedy4(
+                                    inputData = data,
+                                   num_var = number_of_variables,
+                                   formula = form)
+
+  )  
+stopCluster(cl)
+
+```
+
+The function is approximately the same speed as the boot library
