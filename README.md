@@ -1,2 +1,10 @@
 # 5763GroupProject
-MT5763 Stats Project
+Oh Dae Su Group
+
+## Shiny App 
+
+https://joshyp.shinyapps.io/shinyapp/
+
+## Bootstrap speedup
+
+http://rpubs.com/joshy123/542011?fbclid=IwAR0zQkDEtflbb2JsL_yHYCCWYWwqRcMGspl-gO9Umt-PairSY00PBzuQdqU
