@@ -463,8 +463,8 @@ microbenchmark(
 ##  baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##         speedyBoot(inputData = data, num_var = number_of_variables, formula = form,      nBoots = n)
 ##       min       lq     mean   median       uq      max neval
-##  71.69676 83.41923 104.7118 100.5899 110.2474 305.5427   100
-##  70.71356 83.45356 111.3900 100.0209 121.6452 269.9393   100</code></pre>
+##  77.36575 84.01449 108.4726 95.54701 121.0147 338.2292   100
+##  76.29310 85.74675 106.1637 99.09461 115.1908 240.7033   100</code></pre>
 </div>
 <div id="post-parallelization" class="section level2">
 <h2>Post Parallelization</h2>
@@ -493,7 +493,7 @@ bootCoefs &lt;- foreach(i = 1:n, .combine =rbind) %dopar% speedy4(inputData = da
 get_quantiles(bootCoefs, number_of_variables)</code></pre>
 <pre><code>##           [,1]        [,2]        [,3]
 ## [1,]  53.91828 -0.39241458 -0.67908479
-## [2,] 101.87962  0.03086209  0.00105602</code></pre>
+## [2,] 101.87962  0.03942624  0.00105602</code></pre>
 <pre class="r"><code>stopCluster(cl)</code></pre>
 <p>Check speed</p>
 <pre class="r"><code>cores=detectCores()
@@ -518,9 +518,9 @@ microbenchmark(
 ##                                                                                                                                   expr
 ##                   coefficients1 &lt;- baselineBootstrap(inputData = data, num_var = number_of_variables,      formula = form, nBoots = n)
 ##  bootCoefs &lt;- foreach(i = 1:n, .combine = rbind) %dopar% speedy4(inputData = data,      num_var = number_of_variables, formula = form)
-##       min       lq     mean   median        uq      max neval
-##  793.2626 918.4787 1006.950 961.2337 1026.5654 2234.295   100
-##  759.0463 896.7102  951.975 921.1053  964.9668 1733.312   100</code></pre>
+##       min       lq      mean   median        uq      max neval
+##  761.7036 885.5867 1012.1729 929.7713 1037.1346 2113.989   100
+##  722.8394 841.7968  935.1599 878.2646  940.3058 1693.999   100</code></pre>
 <pre class="r"><code>stopCluster(cl)</code></pre>
 </div>
 <div id="comparison-against-boot" class="section level2">
@@ -555,11 +555,42 @@ microbenchmark(
 ##                                                                                                                                   expr
 ##                                                                    results &lt;- boot(data = data, statistic = bs, R = n, formula = form)
 ##  bootCoefs &lt;- foreach(i = 1:n, .combine = rbind) %dopar% speedy4(inputData = data,      num_var = number_of_variables, formula = form)
-##       min       lq     mean   median        uq      max neval
-##  788.2955 904.9569 974.7135 947.9171 1008.0775 1418.630   100
-##  744.3324 910.1600 973.2177 934.2345  998.0073 1704.391   100</code></pre>
+##       min       lq     mean   median       uq      max neval
+##  721.6557 788.6952 949.3243 855.9705 1053.994 1805.171   100
+##  685.1906 809.0650 963.2686 858.2443 1081.957 1648.772   100</code></pre>
 <pre class="r"><code>stopCluster(cl)</code></pre>
 <p>The function is approximately the same speed as the boot library</p>
+</div>
+<div id="worked-example" class="section level2">
+<h2>Worked Example</h2>
+<p>A good model defined by AIC is Oxygen ~ Age + RunTime + RunPulse + MaxPulse. The number of variables is 5 and lets perform 1000 bootstraps.</p>
+<pre class="r"><code>set.seed(9)
+
+cores=detectCores()
+cl &lt;- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+clusterSetRNGStream(cl=cl,9)
+                 #num of boots here
+bootCoefs &lt;- foreach(i = 1:1000, .combine =rbind) %dopar% speedy4(inputData = data,
+                                   num_var = 5,
+                                   formula = &quot;Oxygen ~Age+RunTime+RunPulse+MaxPulse&quot;)
+
+
+stopCluster(cl)</code></pre>
+<p>We can get the mean estimates for the coefficients by finding column means</p>
+<pre class="r"><code>colMeans(bootCoefs)</code></pre>
+<pre><code>## (Intercept)         Age     RunTime    RunPulse    MaxPulse 
+##  98.6583337  -0.1935990  -2.7688876  -0.3197957   0.2387201</code></pre>
+<p>Let’s compare it to the coefficients of classical regression</p>
+<pre class="r"><code>model &lt;- lm(Oxygen ~Age+RunTime+RunPulse+MaxPulse, data=data)
+coef(model)</code></pre>
+<pre><code>## (Intercept)         Age     RunTime    RunPulse    MaxPulse 
+##  98.1478880  -0.1977347  -2.7675788  -0.3481079   0.2705130</code></pre>
+<p>Very good. We can get coefficients using get quantiles on the bootCoefs.</p>
+<pre class="r"><code>get_quantiles(bootCoefs, 5)</code></pre>
+<pre><code>##           [,1]        [,2]      [,3]        [,4]        [,5]
+## [1,]  79.90637 -0.38360975 -3.384129 -0.54040555 -0.06072477
+## [2,] 117.92533 -0.01735126 -2.202520 -0.07697345  0.48743461</code></pre>
 </div>
 
 

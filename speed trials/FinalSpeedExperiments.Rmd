@@ -211,3 +211,44 @@ stopCluster(cl)
 ```
 
 The function is approximately the same speed as the boot library
+
+## Worked Example
+
+A good model defined by AIC is Oxygen ~ Age + RunTime + RunPulse + MaxPulse. The number of variables is 5 and lets perform 1000 bootstraps.
+
+```{r}
+set.seed(9)
+
+cores=detectCores()
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+clusterSetRNGStream(cl=cl,9)
+                 #num of boots here
+bootCoefs <- foreach(i = 1:1000, .combine =rbind) %dopar% speedy4(inputData = data,
+                                   num_var = 5,
+                                   formula = "Oxygen ~Age+RunTime+RunPulse+MaxPulse")
+
+
+stopCluster(cl)
+```
+
+We can get the mean estimates for the coefficients by finding column means
+
+```{r}
+colMeans(bootCoefs)
+```
+
+Let's compare it to the coefficients of classical regression
+
+```{r}
+model <- lm(Oxygen ~Age+RunTime+RunPulse+MaxPulse, data=data)
+coef(model)
+```
+Very good. We can get coefficients using get quantiles on the bootCoefs. 
+
+
+```{r}
+get_quantiles(bootCoefs, 5)
+```
+
+
